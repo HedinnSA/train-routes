@@ -1,0 +1,13 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+
+int main(){
+char from[50], to[50];
+printf("Indtast start hovedstad");
+
+
+
+
+}
