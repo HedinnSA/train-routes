@@ -1,13 +1,153 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <stdio.h>      // Includes standard input/output library for file I/O and printing, open the CSV file
+#include <stdlib.h>     // Includes standard library for memory management and other utilities
+#include <string.h>     // Includes string manipulation functions like strcpy and strcmp
+#include <limits.h>     // Defines INT_MAX, used to represent an infinite distance in graph traversal
 
+#define MAX_STATIONS 100 // Defines the maximum number of stations
+#define MAX_NAME_LEN 50  // Defines the maximum length for a station name
+#define INF INT_MAX      // Defines a large value (infinity) to represent an unreachable distance
 
-int main(){
-char from[50], to[50];
-printf("Indtast start hovedstad");
+// Structure to store graph edges
+typedef struct {
+    int time;            // Time to travel between stations
+    int distance;        // Distance between stations
+    int station_id;      // ID of the destination station
+} Edge;
 
+// Structure to represent a station with adjacency list
+typedef struct {
+    char name[MAX_NAME_LEN]; // Station name
+    Edge edges[MAX_STATIONS]; // Array of edges (connections) to other stations
+    int edge_count;           // Number of edges for this station
+} Station;
 
+// Array of stations
+Station stations[MAX_STATIONS]; // Holds all station data
+int station_count = 0;          // Tracks the number of stations added
 
+int get_station_id(char *name);
+void load_graph(const char *filename);
+void add_edge(char *start, char *end, int distance, int time);
+void dijkstra(int start_id, int end_id);
 
+int main() {
+    const char *filename = "togruter.csv"; // File with station and route data
+    load_graph(filename);                  // Load data from file into graph
+
+    char start[MAX_NAME_LEN], end[MAX_NAME_LEN];
+    printf("Enter start station: ");       // Prompt for start station
+    scanf("%s", start);
+    printf("Enter destination station: "); // Prompt for end station
+    scanf("%s", end);
+
+    int start_id = get_station_id(start);  // Get ID for start station
+    int end_id = get_station_id(end);      // Get ID for end station
+
+    dijkstra(start_id, end_id);            // Find and display shortest path
+
+    return 0;
+}
+
+// Function to find station ID by name
+int get_station_id(char *name) {
+    for (int i = 0; i < station_count; i++) {
+        if (strcmp(stations[i].name, name) == 0) {
+            return i; // If the station exists, return its ID
+        }
+    }
+    // If station not found, add a new one
+    strcpy(stations[station_count].name, name); // Copy the name to the new station
+    stations[station_count].edge_count = 0;     // Initialize edge count
+    return station_count++;                     // Return new station's ID and increment count
+}
+
+// Function to load CSV file data
+void load_graph(const char *filename) {
+    FILE *file = fopen(filename, "r"); // Opens the CSV file for reading
+    if (!file) {
+        perror("Failed to open file"); // Prints an error if file can't be opened
+        exit(1);
+    }
+    char line[128]; // Buffer to hold each line of the file
+    while (fgets(line, sizeof(line), file)) { // Reads each line of the file
+        char start[MAX_NAME_LEN], end[MAX_NAME_LEN];
+        int time;
+        int distance;
+        sscanf(line, "%[^;];%[^;];%d;%d", start, end, &distance, &time); // Parses line fields
+        add_edge(start, end, distance, time); // Adds an edge using the parsed data
+    }
+    fclose(file); // Closes the file after reading
+}
+
+// Function to add an edge between two stations
+void add_edge(char *start, char *end, int distance, int time) {
+    int start_id = get_station_id(start); // Get or create ID for start station
+    int end_id = get_station_id(end);     // Get or create ID for end station
+
+    // Add edge in both directions (undirected graph)
+    stations[start_id].edges[stations[start_id].edge_count].station_id = end_id;
+    stations[start_id].edges[stations[start_id].edge_count].time = time;
+    stations[start_id].edges[stations[start_id].edge_count].distance = distance;
+    stations[start_id].edge_count++;
+
+    stations[end_id].edges[stations[end_id].edge_count].station_id = start_id;
+    stations[end_id].edges[stations[end_id].edge_count].time = time;
+    stations[end_id].edges[stations[end_id].edge_count].distance = distance;
+    stations[end_id].edge_count++;
+}
+
+// Dijkstra's algorithm for shortest path
+void dijkstra(int start_id, int end_id) {
+    int visited[MAX_STATIONS], prev[MAX_STATIONS], dist[MAX_STATIONS], tid[MAX_STATIONS];
+    for (int i = 0; i < station_count; i++) {
+        dist[i] = INF;     // Initialize distances as infinity
+        tid[i] = INF;      // Initialize travel times as infinity
+        prev[i] = -1;      // Initialize previous stations as undefined
+        visited[i] = 0;    // Mark all stations as unvisited
+    }
+    dist[start_id] = 0;    // Distance to start station is 0
+    tid[start_id] = 0;     // Travel time to start station is 0
+
+    for (int i = 0; i < station_count; i++) {
+        int min_tid = INF, u = -1;
+        for (int j = 0; j < station_count; j++) {
+            if (!visited[j] && tid[j] < min_tid) { // Find unvisited station with smallest travel time
+                min_tid = tid[j];
+                u = j;
+            }
+        }
+        if (u == -1 || u == end_id) break; // Stop if no reachable station remains or end is reached
+        visited[u] = 1; // Mark station u as visited
+
+        for (int j = 0; j < stations[u].edge_count; j++) {
+            int v = stations[u].edges[j].station_id;
+            int alt = dist[u] + stations[u].edges[j].distance;
+            if (alt < dist[v]) { // Update distance if a shorter path is found
+                dist[v] = alt;
+                prev[v] = u;
+            }
+            int altt = tid[u] + stations[u].edges[j].time;
+            if (altt < tid[v]) { // Update time if a faster path is found
+                tid[v] = altt;
+                prev[v] = u;
+            }
+        }
+    }
+
+        // Print shortest path
+    if (dist[end_id] == INF) {
+        printf("No route found from %s to %s\n", stations[start_id].name, stations[end_id].name);
+        return;
+    }
+    printf("Shortest route from %s to %s (Distance: %d)(Tid: %d):\n", stations[start_id].name, stations[end_id].name, dist[end_id], tid[end_id]);
+
+    int path[MAX_STATIONS], path_len = 0;
+    for (int v = end_id; v != -1; v = prev[v]) { // Build path by tracing back from end station
+        path[path_len++] = v;
+    }
+    for (int i = path_len - 1; i >= 0; i--) { // Print stations in the path order
+        printf("%s", stations[path[i]].name);
+        if (i > 0) printf(" -> ");
+    }
+    printf("\n");
 }
