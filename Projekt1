@@ -122,13 +122,13 @@ void dijkstra(int start_id, int end_id) {
         for (int j = 0; j < stations[u].edge_count; j++) {
             int v = stations[u].edges[j].station_id;
             int alt = dist[u] + stations[u].edges[j].distance;
-            if (alt < dist[v]) { // Update distance if a shorter path is found
-                dist[v] = alt;
+            /*if (alt < dist[v]) { // Update distance if a shorter path is found
                 prev[v] = u;
-            }
+            }*/
             int altt = tid[u] + stations[u].edges[j].time;
             if (altt < tid[v]) { // Update time if a faster path is found
                 tid[v] = altt;
+                dist[v] = alt;
                 prev[v] = u;
             }
         }
