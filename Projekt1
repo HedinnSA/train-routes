@@ -118,6 +118,7 @@ void add_edge(char *start, char *end, int distance, int time) {
 // Dijkstra's algorithm for shortest path
 void dijkstra(int start_id, int end_id) {
     int visited[MAX_STATIONS], prev[MAX_STATIONS], dist[MAX_STATIONS], tid[MAX_STATIONS];
+    int co2 = 6;
     for (int i = 0; i < station_count; i++) {
         dist[i] = INF;     // Initialize distances as infinity
         tid[i] = INF;      // Initialize travel times as infinity
@@ -160,7 +161,8 @@ void dijkstra(int start_id, int end_id) {
         printf("No route found from %s to %s\n", stations[start_id].name, stations[end_id].name);
         return;
     }
-    printf("Shortest route from %s to %s (Distance: %d km)(Time: %d min):\n", stations[start_id].name, stations[end_id].name, dist[end_id], tid[end_id]);
+    printf("Shortest route from %s to %s (Distance: %d km)(Time: %d min)(CO2 Emission per/person: %d grams):\n", stations[start_id].name, stations[end_id].name, dist[end_id], tid[end_id],
+                                                                                                (dist[end_id] * co2));
 
     int path[MAX_STATIONS], path_len = 0;
     for (int v = end_id; v != -1; v = prev[v]) { // Build path by tracing back from end station
