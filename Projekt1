@@ -2,8 +2,9 @@
 #include <stdlib.h>     // Includes standard library for memory management and other utilities
 #include <string.h>     // Includes string manipulation functions like strcpy and strcmp
 #include <limits.h>     // Defines INT_MAX, used to represent an infinite distance in graph traversal
+#include <stdbool.h>
 
-#define MAX_STATIONS 100 // Defines the maximum number of stations
+#define MAX_STATIONS 150 // Defines the maximum number of stations
 #define MAX_NAME_LEN 50  // Defines the maximum length for a station name
 #define INF INT_MAX      // Defines a large value (infinity) to represent an unreachable distance
 
@@ -21,6 +22,16 @@ typedef struct {
     int edge_count;           // Number of edges for this station
 } Station;
 
+typedef struct {
+    int station_id;
+    int time;
+} Prique_elements;
+
+typedef struct {
+    Prique_elements elements[MAX_STATIONS];
+    int size;
+}Queue;
+
 // Array of stations
 Station stations[MAX_STATIONS]; // Holds all station data
 int station_count = 0;          // Tracks the number of stations added
@@ -29,8 +40,12 @@ int get_station_id(char *name);
 void load_graph(const char *filename);
 void add_edge(char *start, char *end, int distance, int time);
 void dijkstra(int start_id, int end_id);
+int push(Queue *queue, int station, int time);
+void initqueue(Queue *queue);
+Prique_elements pop(Queue *queue);
+bool is_empty(Queue *queue);
 
-int main() {
+int main(void) {
     const char *filename = "togruter.csv"; // File with station and route data
     load_graph(filename);                  // Load data from file into graph
 
@@ -85,11 +100,15 @@ void add_edge(char *start, char *end, int distance, int time) {
     int end_id = get_station_id(end);     // Get or create ID for end station
 
     // Add edge in both directions (undirected graph)
+    // stations[0].edges[]
+    //Station es = stations[start_id]; 
     stations[start_id].edges[stations[start_id].edge_count].station_id = end_id;
+    // station[0].edges[0].station_id = end_id -> First time the program runs
     stations[start_id].edges[stations[start_id].edge_count].time = time;
     stations[start_id].edges[stations[start_id].edge_count].distance = distance;
     stations[start_id].edge_count++;
 
+    //Station ed = stations[end_id];
     stations[end_id].edges[stations[end_id].edge_count].station_id = start_id;
     stations[end_id].edges[stations[end_id].edge_count].time = time;
     stations[end_id].edges[stations[end_id].edge_count].distance = distance;
@@ -107,16 +126,16 @@ void dijkstra(int start_id, int end_id) {
     }
     dist[start_id] = 0;    // Distance to start station is 0
     tid[start_id] = 0;     // Travel time to start station is 0
+    
+    Queue queue;
+    initqueue(&queue);
+    push(&queue, start_id, 0);
 
-    for (int i = 0; i < station_count; i++) {
-        int min_tid = INF, u = -1;
-        for (int j = 0; j < station_count; j++) {
-            if (!visited[j] && tid[j] < min_tid) { // Find unvisited station with smallest travel time
-                min_tid = tid[j];
-                u = j;
-            }
-        }
-        if (u == -1 || u == end_id) break; // Stop if no reachable station remains or end is reached
+    while(!is_empty(&queue)){
+        Prique_elements current = pop(&queue);
+        int u = current.station_id;
+    
+        if(visited[u]) continue;
         visited[u] = 1; // Mark station u as visited
 
         for (int j = 0; j < stations[u].edge_count; j++) {
@@ -130,16 +149,18 @@ void dijkstra(int start_id, int end_id) {
                 tid[v] = altt;
                 dist[v] = alt;
                 prev[v] = u;
+                push(&queue, v, altt);
             }
         }
     }
+    
 
         // Print shortest path
     if (dist[end_id] == INF) {
         printf("No route found from %s to %s\n", stations[start_id].name, stations[end_id].name);
         return;
     }
-    printf("Shortest route from %s to %s (Distance: %d)(Tid: %d):\n", stations[start_id].name, stations[end_id].name, dist[end_id], tid[end_id]);
+    printf("Shortest route from %s to %s (Distance: %d km)(Time: %d min):\n", stations[start_id].name, stations[end_id].name, dist[end_id], tid[end_id]);
 
     int path[MAX_STATIONS], path_len = 0;
     for (int v = end_id; v != -1; v = prev[v]) { // Build path by tracing back from end station
@@ -151,3 +172,46 @@ void dijkstra(int start_id, int end_id) {
     }
     printf("\n");
 }
+
+
+int push(Queue *queue, int station, int time){
+    int i = queue->size++;
+
+    while(i>0 && queue->elements[(i-1)/2].time > time){
+        queue->elements[i] = queue->elements[(i-1)/2];
+        i = ((i-1)/2);
+    }
+
+    queue->elements[i].station_id = station;
+    queue->elements[i].time = time;
+}
+void initqueue(Queue *queue){
+    queue->size = 0;
+}
+Prique_elements pop(Queue *queue){
+    Prique_elements min_el = queue->elements[0];
+    Prique_elements max_el = queue->elements[--queue->size];
+
+    int prev, i = 0;
+
+    while((prev = 2*i+1) < queue->size){
+        if((prev+1) < queue->size && queue->elements[prev+1].time < queue->elements[prev].time){
+            prev++;
+        }
+        if(max_el.time <= queue->elements[prev].time){
+            break;
+        }
+        queue->elements[i] = queue->elements[prev];
+        i = prev;
+    }
+    queue->elements[i] = max_el;
+    return min_el;
+
+}
+bool is_empty(Queue *queue){
+    return queue->size == 0;
+}
+
+
+
+
