@@ -13,7 +13,7 @@ typedef struct {
     int time;            // Time to travel between stations
     int distance;        // Distance between stations
     int station_id;      // ID of the destination station
-    int co2;           // Co2 emitted for the given route
+    int co2;             // CO2 emitted for the given route
 } Edge;
 
 // Structure to represent a station with adjacency list
@@ -47,19 +47,23 @@ Prique_elements pop(Queue *queue);
 bool is_empty(Queue *queue);
 
 int main(void) {
-    const char *filename = "togruter.csv"; // File with station and route data
-    load_graph(filename);                  // Load data from file into graph
-
+    const char *filename[] = {"togruter.csv", "togruter2.csv", "togruter3.csv"}; // File with station and route data
     char start[MAX_NAME_LEN], end[MAX_NAME_LEN];
-    printf("Enter start station: ");       // Prompt for start station
+
+    // Prompt for start and end stations once
+    printf("Enter start station: ");
     scanf("%s", start);
-    printf("Enter destination station: "); // Prompt for end station
+    printf("Enter destination station: ");
     scanf("%s", end);
 
     int start_id = get_station_id(start);  // Get ID for start station
     int end_id = get_station_id(end);      // Get ID for end station
 
-    dijkstra(start_id, end_id);            // Find and display shortest path
+    for (int i = 0; i < 3; i++) {          // Loop through all files
+        load_graph(filename[i]);           // Load data from file into graph
+        printf("\nRute %d\n", i+1);
+        dijkstra(start_id, end_id);        // Find and display shortest path
+    }
 
     return 0;
 }
@@ -125,16 +129,17 @@ void add_edge(char *start, char *end, int distance, int time, int co2) {
 // Dijkstra's algorithm for shortest path
 void dijkstra(int start_id, int end_id) {
     int visited[MAX_STATIONS], prev[MAX_STATIONS], dist[MAX_STATIONS], tid[MAX_STATIONS], co2[MAX_STATIONS];
+    int co2_fast = 6;
     for (int i = 0; i < station_count; i++) {
         dist[i] = INF;     // Initialize distances as infinity
         tid[i] = INF;      // Initialize travel times as infinity
+        co2[i] = INF;      // Initialize CO2 emition as infinity
         prev[i] = -1;      // Initialize previous stations as undefined
         visited[i] = 0;    // Mark all stations as unvisited
-        co2[i] = INF;
     }
     dist[start_id] = 0;    // Distance to start station is 0
     tid[start_id] = 0;     // Travel time to start station is 0
-    co2[start_id] = 0;
+    co2[start_id] = 0;     // CO2 to start station is 0
     
     Queue queue;
     initqueue(&queue);
@@ -150,11 +155,8 @@ void dijkstra(int start_id, int end_id) {
         for (int j = 0; j < stations[u].edge_count; j++) {
             int v = stations[u].edges[j].station_id;
             int alt = dist[u] + stations[u].edges[j].distance;
-            /*if (alt < dist[v]) { // Update distance if a shorter path is found
-                prev[v] = u;
-            }*/
             int altt = tid[u] + stations[u].edges[j].time;
-            int altc = co2[u] + stations[u].edges[j].co2;
+            int altc = co2[u] + stations[u].edges[j].time;
             if (altt < tid[v]) { // Update time if a faster path is found
                 tid[v] = altt;
                 dist[v] = alt;
@@ -171,8 +173,7 @@ void dijkstra(int start_id, int end_id) {
         printf("No route found from %s to %s\n", stations[start_id].name, stations[end_id].name);
         return;
     }
-    printf("Shortest route from %s to %s (Distance: %d km)(Time: %d min)(CO2 Emission per/person: %d grams):\n", stations[start_id].name, stations[end_id].name, dist[end_id], tid[end_id], co2[end_id]
-                                                                                                );
+    printf("Shortest route from %s to %s (Distance: %d km)(Time: %d min)(CO2 Emission per/person: %d grams):\n", stations[start_id].name, stations[end_id].name, dist[end_id], tid[end_id], co2[end_id]);
 
     int path[MAX_STATIONS], path_len = 0;
     for (int v = end_id; v != -1; v = prev[v]) { // Build path by tracing back from end station
