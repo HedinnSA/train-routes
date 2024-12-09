@@ -12,8 +12,8 @@
 typedef struct {
     int time;            // Time to travel between stations
     int distance;        // Distance between stations
-    int station_id;   
-    int co2;   // ID of the destination station
+    int station_id;      // ID of the destination station
+    int co2;             // CO2 emitted for the given route
 } Edge;
 
 // Structure to represent a station with adjacency list
@@ -67,7 +67,6 @@ int main(void) {
 
     return 0;
 }
-
 
 // Function to find station ID by name
 int get_station_id(char *name) {
@@ -133,14 +132,14 @@ void dijkstra(int start_id, int end_id) {
     int co2_fast = 6;
     for (int i = 0; i < station_count; i++) {
         dist[i] = INF;     // Initialize distances as infinity
-        tid[i] = INF; 
-        co2[i] = INF;     // Initialize travel times as infinity
+        tid[i] = INF;      // Initialize travel times as infinity
+        co2[i] = INF;      // Initialize CO2 emition as infinity
         prev[i] = -1;      // Initialize previous stations as undefined
         visited[i] = 0;    // Mark all stations as unvisited
     }
     dist[start_id] = 0;    // Distance to start station is 0
     tid[start_id] = 0;     // Travel time to start station is 0
-    co2[start_id] = 0;
+    co2[start_id] = 0;     // CO2 to start station is 0
     
     Queue queue;
     initqueue(&queue);
@@ -156,9 +155,6 @@ void dijkstra(int start_id, int end_id) {
         for (int j = 0; j < stations[u].edge_count; j++) {
             int v = stations[u].edges[j].station_id;
             int alt = dist[u] + stations[u].edges[j].distance;
-            /*if (alt < dist[v]) { // Update distance if a shorter path is found
-                prev[v] = u;
-            }*/
             int altt = tid[u] + stations[u].edges[j].time;
             int altc = co2[u] + stations[u].edges[j].time;
             if (altt < tid[v]) { // Update time if a faster path is found
@@ -177,8 +173,7 @@ void dijkstra(int start_id, int end_id) {
         printf("No route found from %s to %s\n", stations[start_id].name, stations[end_id].name);
         return;
     }
-    printf("Shortest route from %s to %s (Distance: %d km)(Time: %d min)(CO2 Emission per/person: %d grams):\n", stations[start_id].name, stations[end_id].name, dist[end_id], tid[end_id],
-                                                                                                co2[end_id]);
+    printf("Shortest route from %s to %s (Distance: %d km)(Time: %d min)(CO2 Emission per/person: %d grams):\n", stations[start_id].name, stations[end_id].name, dist[end_id], tid[end_id], co2[end_id]);
 
     int path[MAX_STATIONS], path_len = 0;
     for (int v = end_id; v != -1; v = prev[v]) { // Build path by tracing back from end station
