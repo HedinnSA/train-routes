@@ -95,25 +95,28 @@ void load_graph(const char *filename) {
 }
 
 // Function to add an edge between two stations
-void add_edge(char *start, char *end, int distance, int time) {
-    int start_id = get_station_id(start); // Get or create ID for start station
-    int end_id = get_station_id(end);     // Get or create ID for end station
+void add_edge(char *start, char *end, int distance, int time) {    
+    int start_id = get_station_id(start); // Get or create ID for start station    
+    int end_id = get_station_id(end);     // Get or create ID for end station    
 
     // Add edge in both directions (undirected graph)
-    // stations[0].edges[]
-    //Station es = stations[start_id]; 
-    stations[start_id].edges[stations[start_id].edge_count].station_id = end_id;
-    // station[0].edges[0].station_id = end_id -> First time the program runs
-    stations[start_id].edges[stations[start_id].edge_count].time = time;
-    stations[start_id].edges[stations[start_id].edge_count].distance = distance;
-    stations[start_id].edge_count++;
+    
+    // Using a pointer here avoids copying the Edge structure, allowing direct manipulation 
+    // of the data in memory for the current edge at stations[start_id].edges[edge_count].
+    Edge *Edge_count_start = &stations[start_id].edges[stations[start_id].edge_count]; 
+    Edge_count_start->station_id = end_id; // Efficiently access and modify edge properties
+    Edge_count_start->time = time;
+    Edge_count_start->distance = distance;
+    stations[start_id].edge_count++; // Increment edge count for the start station
 
-    //Station ed = stations[end_id];
-    stations[end_id].edges[stations[end_id].edge_count].station_id = start_id;
-    stations[end_id].edges[stations[end_id].edge_count].time = time;
-    stations[end_id].edges[stations[end_id].edge_count].distance = distance;
-    stations[end_id].edge_count++;
+    // Similarly, using a pointer for the end station avoids redundancy and improves memory efficiency.
+    Edge *Edge_count_end = &stations[end_id].edges[stations[end_id].edge_count];
+    Edge_count_end->station_id = start_id; // Avoids creating a temporary copy of the Edge struct
+    Edge_count_end->time = time;
+    Edge_count_end->distance = distance;
+    stations[end_id].edge_count++; // Increment edge count for the end station
 }
+
 
 // Dijkstra's algorithm for shortest path
 void dijkstra(int start_id, int end_id) {
@@ -213,7 +216,3 @@ Prique_elements pop(Queue *queue){
 bool is_empty(Queue *queue){
     return queue->size == 0;
 }
-
-
-
-
