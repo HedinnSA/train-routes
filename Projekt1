@@ -13,6 +13,7 @@ typedef struct {
     int time;            // Time to travel between stations
     int distance;        // Distance between stations
     int station_id;      // ID of the destination station
+    int co2;           // Co2 emitted for the given route
 } Edge;
 
 // Structure to represent a station with adjacency list
@@ -38,9 +39,9 @@ int station_count = 0;          // Tracks the number of stations added
 
 int get_station_id(char *name);
 void load_graph(const char *filename);
-void add_edge(char *start, char *end, int distance, int time);
+void add_edge(char *start, char *end, int distance, int time, int co2);
 void dijkstra(int start_id, int end_id);
-int push(Queue *queue, int station, int time);
+void push(Queue *queue, int station, int time);
 void initqueue(Queue *queue);
 Prique_elements pop(Queue *queue);
 bool is_empty(Queue *queue);
@@ -88,14 +89,15 @@ void load_graph(const char *filename) {
         char start[MAX_NAME_LEN], end[MAX_NAME_LEN];
         int time;
         int distance;
-        sscanf(line, "%[^;];%[^;];%d;%d", start, end, &distance, &time); // Parses line fields
-        add_edge(start, end, distance, time); // Adds an edge using the parsed data
+        int co2;
+        sscanf(line, "%[^;];%[^;];%d;%d;%d", start, end, &distance, &time, &co2); // Parses line fields
+        add_edge(start, end, distance, time, co2); // Adds an edge using the parsed data
     }
     fclose(file); // Closes the file after reading
 }
 
 // Function to add an edge between two stations
-void add_edge(char *start, char *end, int distance, int time) {    
+void add_edge(char *start, char *end, int distance, int time, int co2) {    
     int start_id = get_station_id(start); // Get or create ID for start station    
     int end_id = get_station_id(end);     // Get or create ID for end station    
 
@@ -107,6 +109,7 @@ void add_edge(char *start, char *end, int distance, int time) {
     Edge_count_start->station_id = end_id; // Efficiently access and modify edge properties
     Edge_count_start->time = time;
     Edge_count_start->distance = distance;
+    Edge_count_start->co2 = co2;
     stations[start_id].edge_count++; // Increment edge count for the start station
 
     // Similarly, using a pointer for the end station avoids redundancy and improves memory efficiency.
@@ -114,22 +117,24 @@ void add_edge(char *start, char *end, int distance, int time) {
     Edge_count_end->station_id = start_id; // Avoids creating a temporary copy of the Edge struct
     Edge_count_end->time = time;
     Edge_count_end->distance = distance;
+    Edge_count_end->co2 = co2;
     stations[end_id].edge_count++; // Increment edge count for the end station
 }
 
 
 // Dijkstra's algorithm for shortest path
 void dijkstra(int start_id, int end_id) {
-    int visited[MAX_STATIONS], prev[MAX_STATIONS], dist[MAX_STATIONS], tid[MAX_STATIONS];
-    int co2 = 6;
+    int visited[MAX_STATIONS], prev[MAX_STATIONS], dist[MAX_STATIONS], tid[MAX_STATIONS], co2[MAX_STATIONS];
     for (int i = 0; i < station_count; i++) {
         dist[i] = INF;     // Initialize distances as infinity
         tid[i] = INF;      // Initialize travel times as infinity
         prev[i] = -1;      // Initialize previous stations as undefined
         visited[i] = 0;    // Mark all stations as unvisited
+        co2[i] = INF;
     }
     dist[start_id] = 0;    // Distance to start station is 0
     tid[start_id] = 0;     // Travel time to start station is 0
+    co2[start_id] = 0;
     
     Queue queue;
     initqueue(&queue);
@@ -149,9 +154,11 @@ void dijkstra(int start_id, int end_id) {
                 prev[v] = u;
             }*/
             int altt = tid[u] + stations[u].edges[j].time;
+            int altc = co2[u] + stations[u].edges[j].co2;
             if (altt < tid[v]) { // Update time if a faster path is found
                 tid[v] = altt;
                 dist[v] = alt;
+                co2[v] = altc;
                 prev[v] = u;
                 push(&queue, v, altt);
             }
@@ -164,8 +171,8 @@ void dijkstra(int start_id, int end_id) {
         printf("No route found from %s to %s\n", stations[start_id].name, stations[end_id].name);
         return;
     }
-    printf("Shortest route from %s to %s (Distance: %d km)(Time: %d min)(CO2 Emission per/person: %d grams):\n", stations[start_id].name, stations[end_id].name, dist[end_id], tid[end_id],
-                                                                                                (dist[end_id] * co2));
+    printf("Shortest route from %s to %s (Distance: %d km)(Time: %d min)(CO2 Emission per/person: %d grams):\n", stations[start_id].name, stations[end_id].name, dist[end_id], tid[end_id], co2[end_id]
+                                                                                                );
 
     int path[MAX_STATIONS], path_len = 0;
     for (int v = end_id; v != -1; v = prev[v]) { // Build path by tracing back from end station
@@ -179,7 +186,7 @@ void dijkstra(int start_id, int end_id) {
 }
 
 
-int push(Queue *queue, int station, int time){
+void push(Queue *queue, int station, int time){
     int i = queue->size++;
 
     while(i>0 && queue->elements[(i-1)/2].time > time){
