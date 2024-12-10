@@ -4,23 +4,6 @@
 #include <limits.h>     // Defines INT_MAX, used to represent an infinite distance in graph traversal
 #include <stdbool.h>
 
-#define MAX_STATIONS 150 // Defines the maximum number of stations
-#define MAX_NAME_LEN 50  // Defines the maximum length for a station name
-#define INF INT_MAX      // Defines a large value (infinity) to represent an unreachable distance
-
-// Structure to store graph edges
-typedef struct {
-    int time;            // Time to travel between stations
-    int distance;        // Distance between stations
-    int station_id;      // ID of the destination station
-    int co2;             // CO2 emitted for the given route
-} Edge;
-#include <stdio.h>      // Includes standard input/output library for file I/O and printing, open the CSV file
-#include <stdlib.h>     // Includes standard library for memory management and other utilities
-#include <string.h>     // Includes string manipulation functions like strcpy and strcmp
-#include <limits.h>     // Defines INT_MAX, used to represent an infinite distance in graph traversal
-#include <stdbool.h>
-
 #define MAX_STATIONS 500 // Defines the maximum number of stations
 #define MAX_NAME_LEN 50  // Defines the maximum length for a station name
 #define INF INT_MAX      // Defines a large value (infinity) to represent an unreachable distance
