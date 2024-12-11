@@ -33,40 +33,48 @@ typedef struct {
     int size;
 }Queue;
 
+typedef struct {
+    int values [3];
+}Journey;
+
 // Array of stations
 Station stations[MAX_STATIONS]; // Holds all station data
 int station_count = 0;          // Tracks the number of stations added
+
+// Array of journies, for comparing the values of the routes.
+Journey journies[4];
 
 void printPath(int end_id, int *prev);
 int get_station_id(char *name);
 void load_graph(const char *filename);
 void add_edge(char *start, char *end, int distance, int time, int co2);
-void dijkstra(int start_id, int end_id);
+void dijkstra(int start_id, int end_id, int iteration);
 void push(Queue *queue, int station, int time);
 void initqueue(Queue *queue);
 Prique_elements pop(Queue *queue);
 bool is_empty(Queue *queue);
 
 int main(void) {
-    const char *filename[] = {"Togruter_2024.csv", "Togruter_2025_IC5.csv", "togruter_2035.csv"}; // File with station and route data
+    const char *filename[] = {"Togruter_2024.csv", "Togruter_2025_IC5.csv", "togruter_2035.csv", "Flyruter.csv"}; // File with station and route data
     char start[MAX_NAME_LEN], end[MAX_NAME_LEN];
     const char *Rute[] = {"The route as of 2024", 
                           "The route as of 2027 with IC5 trains", 
-                          "The route as of 2035 now with the Kattegat connection and IC5 trains"};
+                          "The route as of 2035 now with the Kattegat connection and IC5 trains",
+                          "The route with planes:"};
 
     // Prompt for start and end stations once
     printf("Enter start station: ");
     scanf("%s", start);
     printf("Enter destination station: ");
     scanf("%s", end);
-
+    
     int start_id = get_station_id(start);  // Get ID for start station
     int end_id = get_station_id(end);      // Get ID for end station
 
-    for (int i = 0; i < 3; i++) {          // Loop through all files
+    for (int i = 0; i < 4; i++) {          // Loop through all files
         load_graph(filename[i]);           // Load data from file into graph
         printf("\n%s\n", Rute[i]);         // Prints which route it is
-        dijkstra(start_id, end_id);        // Find and display shortest path
+        dijkstra(start_id, end_id, i);     // Find and display shortest path
     }
     printf("\n");
 
@@ -93,7 +101,7 @@ void load_graph(const char *filename) {
         perror("Failed to open file"); // Prints an error if file can't be opened
         exit(1);
     }
-    char line[128]; // Buffer to hold each line of the file
+    char line[256]; // Buffer to hold each line of the file
     while (fgets(line, sizeof(line), file)) { // Reads each line of the file
         char start[MAX_NAME_LEN], end[MAX_NAME_LEN];
         int time;
@@ -132,7 +140,7 @@ void add_edge(char *start, char *end, int distance, int time, int co2) {
 
 
 // Dijkstra's algorithm for shortest path
-void dijkstra(int start_id, int end_id) {
+void dijkstra(int start_id, int end_id, int iteration) {
     int visited[MAX_STATIONS], prev[MAX_STATIONS], dist[MAX_STATIONS], tid[MAX_STATIONS], co2[MAX_STATIONS];
     int co2_fast = 6;
     for (int i = 0; i < station_count; i++) {
@@ -161,7 +169,7 @@ void dijkstra(int start_id, int end_id) {
             int v = stations[u].edges[j].station_id;
             int alt = dist[u] + stations[u].edges[j].distance;
             int altt = tid[u] + stations[u].edges[j].time;
-            int altc = co2[u] + stations[u].edges[j].time;
+            int altc = co2[u] + stations[u].edges[j].co2;
             if (altt < tid[v]) { // Update time if a faster path is found
                 tid[v] = altt;
                 dist[v] = alt;
@@ -172,13 +180,18 @@ void dijkstra(int start_id, int end_id) {
         }
     }
     
+    // Saves the journey values for comparison later on
+    journies[iteration].values[0] = dist[end_id];
+    journies[iteration].values[1] = tid[end_id];
+    journies[iteration].values[2] = co2[end_id]; 
+
 
         // Print shortest path
     if (dist[end_id] == INF) {
         printf("No route found from %s to %s\n", stations[start_id].name, stations[end_id].name);
         return;
     }
-    printf("Shortest route from %s to %s (Distance: %d km)(Time: %d min)(CO2 Emission per/person: %d grams):\n", stations[start_id].name, stations[end_id].name, dist[end_id], tid[end_id], co2[end_id]);
+    printf("Shortest route from %s to %s\n(Distance: %d km)(Time: %d min)(CO2 Emission per/person: %d grams):\n", stations[start_id].name, stations[end_id].name, dist[end_id], tid[end_id], co2[end_id]);
 
     char user_input[10];
     printf("Do you want the path order of the stations? (yes/no): ");
