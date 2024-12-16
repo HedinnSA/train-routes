@@ -18,23 +18,26 @@ typedef struct {
 
 // Structure to represent a station with adjacency list
 typedef struct {
-    char name[MAX_NAME_LEN]; // Station name
+    char name[MAX_NAME_LEN];  // Station name
     Edge edges[MAX_STATIONS]; // Array of edges (connections) to other stations
     int edge_count;           // Number of edges for this station
 } Station;
 
+// Structure to store Prique elements
 typedef struct {
-    int station_id;
-    int time;
+    int station_id; // ID of the destination station
+    int time;       // Time to travel between stations
 } Prique_elements;
 
+// Structure to represent the queue
 typedef struct {
-    Prique_elements elements[MAX_STATIONS];
-    int size;
+    Prique_elements elements[MAX_STATIONS]; // Array of elements
+    int size;                               // The size of the queue
 }Queue;
 
+// Structure to store the journey
 typedef struct {
-    int values [3];
+    int values [3]; // Array of values
 }Journey;
 
 // Array of stations
@@ -44,6 +47,7 @@ int station_count = 0;          // Tracks the number of stations added
 // Array of journies, for comparing the values of the routes.
 Journey journies[4];
 
+// Prototypes of the function for use in the main function
 void printPath(int end_id, int *prev);
 int get_station_id(char *name);
 void load_graph(const char *filename);
@@ -54,13 +58,14 @@ void initqueue(Queue *queue);
 Prique_elements pop(Queue *queue);
 bool is_empty(Queue *queue);
 
+// Main function that loads files and routes and uses functions to create an output
 int main(void) {
-    const char *filename[] = {"Togruter_2024.csv", "Togruter_2025_IC5.csv", "togruter_2035.csv", "Flyruter.csv"}; // File with station and route data
-    char start[MAX_NAME_LEN], end[MAX_NAME_LEN];
+    const char *filename[] = {"Togruter_2024.csv", "Togruter_2027_IC5.csv", "togruter_2035.csv", "Flyruter.csv"}; // Files with station and route data
+    char start[MAX_NAME_LEN], end[MAX_NAME_LEN]; // Start and end stations
     const char *Rute[] = {"The route as of 2024", 
                           "The route as of 2027 with IC5 trains", 
                           "The route as of 2035 now with the Kattegat connection and IC5 trains",
-                          "The route with planes:"};
+                          "The route with planes:"}; // Route names
 
     // Prompt for start and end stations once
     printf("Enter start station: ");
@@ -142,7 +147,6 @@ void add_edge(char *start, char *end, int distance, int time, int co2) {
 // Dijkstra's algorithm for shortest path
 void dijkstra(int start_id, int end_id, int iteration) {
     int visited[MAX_STATIONS], prev[MAX_STATIONS], dist[MAX_STATIONS], tid[MAX_STATIONS], co2[MAX_STATIONS];
-    int co2_fast = 6;
     for (int i = 0; i < station_count; i++) {
         dist[i] = INF;     // Initialize distances as infinity
         tid[i] = INF;      // Initialize travel times as infinity
@@ -155,9 +159,9 @@ void dijkstra(int start_id, int end_id, int iteration) {
     co2[start_id] = 0;     // CO2 to start station is 0
     
     Queue queue;
-    initqueue(&queue);
-    push(&queue, start_id, 0);
-
+    initqueue(&queue);     // Initqueue function for initilizing size
+    push(&queue, start_id, 0); // Push function to insert element to the queue
+    // While loop to run as long as the queue isn't empty
     while(!is_empty(&queue)){
         Prique_elements current = pop(&queue);
         int u = current.station_id;
@@ -186,13 +190,14 @@ void dijkstra(int start_id, int end_id, int iteration) {
     journies[iteration].values[2] = co2[end_id]; 
 
 
-        // Print shortest path
+    // Print shortest path
     if (dist[end_id] == INF) {
         printf("No route found from %s to %s\n", stations[start_id].name, stations[end_id].name);
         return;
     }
     printf("Shortest route from %s to %s\n(Distance: %d km)(Time: %d min)(CO2 Emission per/person: %d grams):\n", stations[start_id].name, stations[end_id].name, dist[end_id], tid[end_id], co2[end_id]);
 
+    // Ask user if they want to see the full path for the journey
     char user_input[10];
     printf("Do you want the path order of the stations? (yes/no): ");
     scanf("%s", user_input);
@@ -205,6 +210,7 @@ void dijkstra(int start_id, int end_id, int iteration) {
 
 }
 
+// PrintPath function to print out the shortest path
 void printPath(int end_id, int *prev) {
     int path[MAX_STATIONS], path_len = 0;
     for (int v = end_id; v != -1; v = prev[v]) {
@@ -217,40 +223,54 @@ void printPath(int end_id, int *prev) {
     printf("\n");
 }
 
+// Push function to insert an element into the priority queue 
 void push(Queue *queue, int station, int time){
-    int i = queue->size++;
+    int i = queue->size++; // Increment the size of the queue
 
-    while(i>0 && queue->elements[(i-1)/2].time > time){
-        queue->elements[i] = queue->elements[(i-1)/2];
-        i = ((i-1)/2);
+    // Adjust until it is in the correct position.
+    while(i > 0 && queue->elements[(i-1)/2].time > time){
+        queue->elements[i] = queue->elements[(i-1)/2]; // Move the parent element down
+        i = (i-1)/2; // Move to the parent's index
     }
 
-    queue->elements[i].station_id = station;
+    // Insert the new element at the correct position
+    queue->elements[i].station_id = station; 
     queue->elements[i].time = time;
 }
+
+// Initqueue function initializes the priority queue by setting the size to 0
 void initqueue(Queue *queue){
-    queue->size = 0;
+    queue->size = 0; 
 }
+
+// Pop function removes and returns the element with the smallest time value
 Prique_elements pop(Queue *queue){
-    Prique_elements min_el = queue->elements[0];
-    Prique_elements max_el = queue->elements[--queue->size];
+    Prique_elements min_el = queue->elements[0]; 
+    Prique_elements max_el = queue->elements[--queue->size]; 
 
     int prev, i = 0;
 
-    while((prev = 2*i+1) < queue->size){
+    // Adjust until it is in the correct position
+    while((prev = 2*i+1) < queue->size){ 
+        // Comparing left and tight to find the smallest
         if((prev+1) < queue->size && queue->elements[prev+1].time < queue->elements[prev].time){
-            prev++;
+            prev++; // Move to the right if it is smaller
         }
+
+        // Stop if the replacement element is smaller than or equal to the other element
         if(max_el.time <= queue->elements[prev].time){
             break;
         }
-        queue->elements[i] = queue->elements[prev];
+
+        queue->elements[i] = queue->elements[prev]; // Move the element up
         i = prev;
     }
-    queue->elements[i] = max_el;
-    return min_el;
 
+    queue->elements[i] = max_el; // Place the replacement element at the correct position
+    return min_el; // Return the minimum element
 }
+
+// is_empty function checks if the priority queue is empty
 bool is_empty(Queue *queue){
-    return queue->size == 0;
+    return queue->size == 0; // Return true if the size is 0, otherwise false.
 }
