@@ -238,7 +238,7 @@ Prique_elements pop(Queue *queue){
 
     // Adjust until it is in the correct position
     while((prev = 2*i+1) < queue->size){ 
-        // Comparing left and tight to find the smallest
+        // Comparing left and right to find the smallest
         if((prev+1) < queue->size && queue->elements[prev+1].time < queue->elements[prev].time){
             prev++; // Move to the right if it is smaller
         }
