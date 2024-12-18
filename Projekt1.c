@@ -2,7 +2,7 @@
 #include <stdlib.h>     // Includes standard library for memory management and other utilities
 #include <string.h>     // Includes string manipulation functions like strcpy and strcmp
 #include <limits.h>     // Defines INT_MAX, used to represent an infinite distance in graph traversal
-#include <stdbool.h>    // Includes bool type and true and false boolean logic
+#include <stdbool.h>
 
 #define MAX_STATIONS 500 // Defines the maximum number of stations
 #define MAX_NAME_LEN 50  // Defines the maximum length for a station name
@@ -35,17 +35,9 @@ typedef struct {
     int size;                               // The size of the queue
 }Queue;
 
-// Structure to store the journey
-typedef struct {
-    int values [3]; // Array of values
-}Journey;
-
 // Array of stations
 Station stations[MAX_STATIONS]; // Holds all station data
 int station_count = 0;          // Tracks the number of stations added
-
-// Array of journies, for comparing the values of the routes.
-Journey journies[4];
 
 // Prototypes of the function for use in the main function
 void printPath(int end_id, int *prev);
@@ -183,12 +175,6 @@ void dijkstra(int start_id, int end_id, int iteration) {
             }
         }
     }
-    
-    // Saves the journey values for comparison later on
-    journies[iteration].values[0] = dist[end_id];
-    journies[iteration].values[1] = tid[end_id];
-    journies[iteration].values[2] = co2[end_id]; 
-
 
     // Print shortest path
     if (dist[end_id] == INF) {
