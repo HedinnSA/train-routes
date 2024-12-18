@@ -2,7 +2,7 @@
 #include <stdlib.h>     // Includes standard library for memory management and other utilities
 #include <string.h>     // Includes string manipulation functions like strcpy and strcmp
 #include <limits.h>     // Defines INT_MAX, used to represent an infinite distance in graph traversal
-#include <stdbool.h>
+#include <stdbool.h>    // Includes bool type and true and false boolean logic
 
 #define MAX_STATIONS 500 // Defines the maximum number of stations
 #define MAX_NAME_LEN 50  // Defines the maximum length for a station name
